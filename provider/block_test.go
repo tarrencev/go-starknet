@@ -27,7 +27,7 @@ func TestProvider_Block(t *testing.T) {
 	}} {
 		ctx := context.Background()
 		p := NewProvider("https://alpha-mainnet.starknet.io")
-		got, err := p.GetBlock(ctx, tc.opts)
+		got, err := p.Block(ctx, tc.opts)
 		if err != nil {
 			t.Fatalf("getting block: %v", err)
 		}

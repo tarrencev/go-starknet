@@ -26,7 +26,7 @@ type BlockOptions struct {
 // Gets the block information from a block ID.
 //
 // [Reference](https://github.com/starkware-libs/cairo-lang/blob/f464ec4797361b6be8989e36e02ec690e74ef285/src/starkware/starknet/services/api/feeder_gateway/feeder_gateway_client.py#L27-L31)
-func (p *Provider) GetBlock(ctx context.Context, opts *BlockOptions) (*Block, error) {
+func (p *Provider) Block(ctx context.Context, opts *BlockOptions) (*Block, error) {
 	req, err := p.newRequest(ctx, http.MethodGet, "/get_block", nil)
 	if err != nil {
 		return nil, err

@@ -25,7 +25,7 @@ func TestProvider_Transaction(t *testing.T) {
 	}} {
 		ctx := context.Background()
 		p := NewProvider("https://alpha-mainnet.starknet.io")
-		got, err := p.GetTransaction(ctx, tc.opts)
+		got, err := p.Transaction(ctx, tc.opts)
 		if err != nil {
 			t.Fatalf("getting transaction: %v", err)
 		}

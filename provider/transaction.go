@@ -46,7 +46,7 @@ type TransactionOptions struct {
 // Gets the transaction information from a tx id.
 //
 // [Reference](https://github.com/starkware-libs/cairo-lang/blob/f464ec4797361b6be8989e36e02ec690e74ef285/src/starkware/starknet/services/api/feeder_gateway/feeder_gateway_client.py#L54-L58)
-func (p *Provider) GetTransaction(ctx context.Context, opts TransactionOptions) (*Transaction, error) {
+func (p *Provider) Transaction(ctx context.Context, opts TransactionOptions) (*Transaction, error) {
 	req, err := p.newRequest(ctx, http.MethodGet, "/get_transaction", nil)
 	if err != nil {
 		return nil, err
