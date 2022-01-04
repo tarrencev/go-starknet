@@ -14,6 +14,7 @@ import (
 func Bind(types []string, abis []string) (string, error) {
 	// contracts is the map of each individual contract requested binding
 	var contracts = make(map[string]*tmplContract)
+	var structs = make(map[string]*tmplStruct)
 
 	for i := 0; i < len(types); i++ {
 		// Parse the actual ABI to generate the binding for
@@ -35,8 +36,6 @@ func Bind(types []string, abis []string) (string, error) {
 			calls     = make(map[string]*tmplMethod)
 			transacts = make(map[string]*tmplMethod)
 			events    = make(map[string]*tmplEvent)
-			fallback  *tmplMethod
-			receive   *tmplMethod
 
 			// identifiers are used to detect duplicated identifiers of functions
 			// and events. For all calls, transacts and events, abigen will generate
@@ -110,15 +109,28 @@ func Bind(types []string, abis []string) (string, error) {
 		// 	events[original.Name] = &tmplEvent{Original: original, Normalized: normalized}
 		// }
 
+		for n, s := range parsedABI.Structs {
+			fields := []*tmplField{}
+
+			for _, m := range s.Members {
+				fields = append(fields, &tmplField{
+					Name: m.Name,
+					Type: bindBasicType(m.Type),
+				})
+			}
+
+			structs[n] = &tmplStruct{
+				Name:   n,
+				Fields: fields,
+			}
+		}
+
 		contracts[types[i]] = &tmplContract{
-			Type:     abi.ToCamelCase(types[i]),
-			InputABI: strings.Replace(strippedABI, "\"", "\\\"", -1),
-			// InputBin:    strings.TrimPrefix(strings.TrimSpace(bytecodes[i]), "0x"),
+			Type:        abi.ToCamelCase(types[i]),
+			InputABI:    strings.Replace(strippedABI, "\"", "\\\"", -1),
 			Constructor: parsedABI.Constructor,
 			Calls:       calls,
 			Transacts:   transacts,
-			Fallback:    fallback,
-			Receive:     receive,
 			Events:      events,
 		}
 	}
@@ -127,6 +139,7 @@ func Bind(types []string, abis []string) (string, error) {
 	data := &tmplData{
 		Package:   "starknet",
 		Contracts: contracts,
+		Structs:   structs,
 	}
 	buffer := new(bytes.Buffer)
 

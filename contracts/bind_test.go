@@ -1,6 +1,10 @@
 package contracts
 
-import "testing"
+import (
+	"io/ioutil"
+	"path/filepath"
+	"testing"
+)
 
 const abiJSON = `[
     {
@@ -385,8 +389,12 @@ const abiJSON = `[
 ]`
 
 func Test_Bind(t *testing.T) {
-	_, err := Bind([]string{"Type"}, []string{abiJSON})
+	src, err := Bind([]string{"Type"}, []string{abiJSON})
 	if err != nil {
 		t.Fatalf("creating bindings: %+v", err)
+	}
+
+	if err := ioutil.WriteFile(filepath.Join("./test/", "bindings.go"), []byte(src), 0600); err != nil {
+		t.Fatalf("writing ABI binding: %v", err)
 	}
 }

@@ -15,12 +15,34 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 package abi
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // Argument holds the name of the argument and the corresponding type.
 // Types are used when packing and testing arguments.
 type Member struct {
 	Name   string
-	Type   string
+	Type   Type
 	Offset uint64
+}
+
+// UnmarshalJSON implements json.Unmarshaler interface.
+func (member *Member) UnmarshalJSON(data []byte) error {
+	var arg ArgumentMarshaling
+	err := json.Unmarshal(data, &arg)
+	if err != nil {
+		return fmt.Errorf("member json err: %v", err)
+	}
+
+	member.Type, err = NewType(arg.Type, arg.InternalType, arg.Components)
+	if err != nil {
+		return err
+	}
+	member.Name = arg.Name
+
+	return nil
 }
 
 type Members []Member
