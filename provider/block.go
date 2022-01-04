@@ -19,7 +19,8 @@ type Block struct {
 }
 
 type BlockOptions struct {
-	BlockID string `url:"blockId,omitempty"`
+	BlockNumber int    `url:"blockNumber,omitempty"`
+	BlockHash   string `url:"blockHash,omitempty"`
 }
 
 // Gets the block information from a block ID.
