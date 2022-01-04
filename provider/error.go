@@ -11,18 +11,13 @@ type Error struct {
 	StatusCode int    `json:"-"`
 	Body       []byte `json:"-"`
 
-	Message     string `json:"message"`
-	Type        string `json:"type"`
-	ServerError string `json:"server_error"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 // Error implements the error interface.
 func (e Error) Error() string {
-	s := fmt.Sprintf("%d: %s", e.StatusCode, e.Message)
-	if e.ServerError != "" {
-		s += ": " + e.ServerError
-	}
-	return s
+	return fmt.Sprintf("%d: %s %s", e.StatusCode, e.Code, e.Message)
 }
 
 // NewError creates a new Error from an API response.
@@ -32,7 +27,7 @@ func NewError(resp *http.Response) error {
 	if err == nil && data != nil {
 		apiErr.Body = data
 		if err := json.Unmarshal(data, &apiErr); err != nil {
-			apiErr.Type = "unknown_error_format"
+			apiErr.Code = "unknown_error_format"
 			apiErr.Message = string(data)
 		}
 	}
