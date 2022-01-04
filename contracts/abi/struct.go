@@ -18,6 +18,8 @@ package abi
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 // Argument holds the name of the argument and the corresponding type.
@@ -40,7 +42,7 @@ func (member *Member) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	member.Name = arg.Name
+	member.Name = abi.ToCamelCase(arg.Name)
 
 	return nil
 }
