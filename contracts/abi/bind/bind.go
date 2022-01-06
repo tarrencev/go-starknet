@@ -1,4 +1,4 @@
-package contracts
+package bind
 
 import (
 	"bytes"
@@ -33,9 +33,7 @@ func Bind(types []string, abis []string) (string, error) {
 
 		// Extract the call and transact methods; events, struct definitions; and sort them alphabetically
 		var (
-			calls     = make(map[string]*tmplMethod)
-			transacts = make(map[string]*tmplMethod)
-			events    = make(map[string]*tmplEvent)
+			calls = make(map[string]*tmplMethod)
 
 			// identifiers are used to detect duplicated identifiers of functions
 			// and events. For all calls, transacts and events, abigen will generate
@@ -75,39 +73,8 @@ func Bind(types []string, abis []string) (string, error) {
 			// Append the methods to the call or transact lists
 			if original.IsConstant() {
 				calls[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
-			} else {
-				transacts[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
 			}
 		}
-		// for _, original := range parsedABI.Events {
-		// 	// Skip anonymous events as they don't support explicit filtering
-		// 	if original.Anonymous {
-		// 		continue
-		// 	}
-		// 	// Normalize the event for capital cases and non-anonymous outputs
-		// 	normalized := original
-
-		// 	// Ensure there is no duplicated identifier
-		// 	name := methodNormalizer[lang](alias(aliases, original.Name))
-		// 	if eventIdentifiers[name] {
-		// 		return "", fmt.Errorf("duplicated identifier \"%s\"(normalized \"%s\"), use --alias for renaming", original.Name, name)
-		// 	}
-		// 	eventIdentifiers[name] = true
-		// 	normalized.Name = name
-
-		// 	normalized.Inputs = make([]abi.Argument, len(original.Inputs))
-		// 	copy(normalized.Inputs, original.Inputs)
-		// 	for j, input := range normalized.Inputs {
-		// 		if input.Name == "" {
-		// 			normalized.Inputs[j].Name = fmt.Sprintf("arg%d", j)
-		// 		}
-		// 		if hasStruct(input.Type) {
-		// 			bindStructType[lang](input.Type, structs)
-		// 		}
-		// 	}
-		// 	// Append the event to the accumulator list
-		// 	events[original.Name] = &tmplEvent{Original: original, Normalized: normalized}
-		// }
 
 		for n, s := range parsedABI.Structs {
 			fields := []*tmplField{}
@@ -130,8 +97,6 @@ func Bind(types []string, abis []string) (string, error) {
 			InputABI:    strings.Replace(strippedABI, "\"", "\\\"", -1),
 			Constructor: parsedABI.Constructor,
 			Calls:       calls,
-			Transacts:   transacts,
-			Events:      events,
 		}
 	}
 

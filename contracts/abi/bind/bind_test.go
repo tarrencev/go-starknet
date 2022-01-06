@@ -1,4 +1,4 @@
-package contracts
+package bind
 
 import (
 	"io/ioutil"

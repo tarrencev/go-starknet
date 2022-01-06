@@ -2,6 +2,7 @@ package abi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 )
@@ -79,4 +80,71 @@ func overloadedName(rawName string, isAvail func(string) bool) string {
 		ok = isAvail(name)
 	}
 	return name
+}
+
+func (abi ABI) getArguments(name string, data []byte) (Arguments, error) {
+	// since there can't be naming collisions with contracts and events,
+	// we need to decide whether we're calling a method or an event
+	var args Arguments
+	if method, ok := abi.Methods[name]; ok {
+		if len(data)%32 != 0 {
+			return nil, fmt.Errorf("abi: improperly formatted output: %s - Bytes: [%+v]", string(data), data)
+		}
+		args = method.Outputs
+	}
+	if args == nil {
+		return nil, errors.New("abi: could not locate named method or event")
+	}
+	return args, nil
+}
+
+// Pack the given method name to conform the ABI. Method call's data
+// will consist of method_id, args0, arg1, ... argN. Method id consists
+// of 4 bytes and arguments are all 32 bytes.
+// Method ids are created from the first 4 bytes of the hash of the
+// methods string signature. (signature = baz(uint32,string32))
+func (abi ABI) Pack(name string, args ...interface{}) ([]byte, error) {
+	// Fetch the ABI of the requested method
+	if name == "" {
+		// constructor
+		arguments, err := abi.Constructor.Inputs.Pack(args...)
+		if err != nil {
+			return nil, err
+		}
+		return arguments, nil
+	}
+	method, exist := abi.Methods[name]
+	if !exist {
+		return nil, fmt.Errorf("method '%s' not found", name)
+	}
+	arguments, err := method.Inputs.Pack(args...)
+	if err != nil {
+		return nil, err
+	}
+	// Pack up the method ID too if not a constructor and return
+	return append(method.ID, arguments...), nil
+}
+
+// Unpack unpacks the output according to the abi specification.
+func (abi ABI) Unpack(name string, data []byte) ([]interface{}, error) {
+	args, err := abi.getArguments(name, data)
+	if err != nil {
+		return nil, err
+	}
+	return args.Unpack(data)
+}
+
+// UnpackIntoInterface unpacks the output in v according to the abi specification.
+// It performs an additional copy. Please only use, if you want to unpack into a
+// structure that does not strictly conform to the abi structure (e.g. has additional arguments)
+func (abi ABI) UnpackIntoInterface(v interface{}, name string, data []byte) error {
+	args, err := abi.getArguments(name, data)
+	if err != nil {
+		return err
+	}
+	unpacked, err := args.Unpack(data)
+	if err != nil {
+		return err
+	}
+	return args.Copy(v, unpacked)
 }
