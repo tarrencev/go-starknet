@@ -15,12 +15,12 @@ type Contracts struct {
 }
 
 type CallMsg struct {
-	Type               string       `json:"type"`
-	ContractAddress    *common.Hash `json:"contractAddress,omitempty"`
+	Type               string       `json:"type,omitempty"`
+	ContractAddress    *common.Hash `json:"contract_address"`
 	EntryPointType     string       `json:"entry_point_type,omitempty"`
-	EntryPointSelector common.Hash  `json:"entry_point_selector,omitempty"`
-	Signature          [2]*big.Int  `json:"signature"`
-	Calldata           []byte       `json:"calldata"`
+	EntryPointSelector string       `json:"entry_point_selector"`
+	Signature          []*big.Int   `json:"signature"`
+	Calldata           []string     `json:"calldata"`
 }
 
 type CallContractResponse struct {
@@ -30,9 +30,8 @@ type CallContractResponse struct {
 // Calls a contract.
 //
 // [Reference](https://github.com/starkware-libs/cairo-lang/blob/fc97bdd8322a7df043c87c371634b26c15ed6cee/src/starkware/starknet/services/api/feeder_gateway/feeder_gateway_client.py#L25)
-func (p *Provider) CallContract(ctx context.Context, call CallMsg, blockNumber *big.Int) ([]byte, error) {
-	call.Type = "INVOKE_FUNCTION"
-	call.EntryPointType = "EXTERNAL"
+func (p *Provider) CallContract(ctx context.Context, call CallMsg, blockNumber *big.Int) ([]string, error) {
+	call.Signature = []*big.Int{}
 
 	req, err := p.newRequest(ctx, http.MethodPost, "/call_contract", call)
 	if err != nil {
@@ -48,7 +47,7 @@ func (p *Provider) CallContract(ctx context.Context, call CallMsg, blockNumber *
 		return nil, err
 	}
 
-	return []byte{}, nil
+	return resp.Result, nil
 }
 
 // Gets the smart contract address on the goerli testnet.

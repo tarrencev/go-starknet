@@ -18,11 +18,13 @@ package bind
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/tarrencev/go-starknet/contracts/abi"
 	"github.com/tarrencev/go-starknet/provider"
@@ -94,43 +96,35 @@ func (c *BoundContract) Call(opts *CallOpts, results *[]interface{}, method stri
 	if results == nil {
 		results = new([]interface{})
 	}
-	// Pack the input, call and unpack the results
-	input, err := c.abi.Pack(method, params...)
+
+	var input []string
+	for _, p := range params {
+		switch t := p.(type) {
+		case *big.Int:
+			input = append(input, t.String())
+		}
+	}
+
+	selector, exist := c.abi.Methods[method]
+	if !exist {
+		return fmt.Errorf("method '%s' not found", method)
+	}
+
+	var (
+		msg = provider.CallMsg{ContractAddress: &c.address, EntryPointSelector: hexutil.Encode(selector.ID), Calldata: input}
+		ctx = ensureContext(opts.Context)
+	)
+
+	output, err := c.caller.CallContract(ctx, msg, opts.BlockNumber)
 	if err != nil {
 		return err
 	}
-	var (
-		msg    = provider.CallMsg{ContractAddress: &c.address, Calldata: input}
-		ctx    = ensureContext(opts.Context)
-		code   []byte
-		output []byte
-	)
-	if opts.Pending {
-		pb, ok := c.caller.(PendingContractCaller)
-		if !ok {
-			return ErrNoPendingState
-		}
-		output, err = pb.PendingCallContract(ctx, msg)
-		if err == nil && len(output) == 0 {
-			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = pb.PendingCodeAt(ctx, c.address); err != nil {
-				return err
-			} else if len(code) == 0 {
-				return ErrNoCode
-			}
-		}
-	} else {
-		output, err = c.caller.CallContract(ctx, msg, opts.BlockNumber)
-		if err != nil {
+	if len(output) == 0 {
+		// Make sure we have a contract to operate on, and bail out otherwise.
+		if cc, err := c.caller.CodeAt(ctx, c.address, opts.BlockNumber); err != nil {
 			return err
-		}
-		if len(output) == 0 {
-			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = c.caller.CodeAt(ctx, c.address, opts.BlockNumber); err != nil {
-				return err
-			} else if len(code) == 0 {
-				return ErrNoCode
-			}
+		} else if len(cc.Bytecode) == 0 {
+			return ErrNoCode
 		}
 	}
 
@@ -139,8 +133,8 @@ func (c *BoundContract) Call(opts *CallOpts, results *[]interface{}, method stri
 		*results = res
 		return err
 	}
-	res := *results
-	return c.abi.UnpackIntoInterface(res[0], method, output)
+	// res := *results
+	return nil //c.abi.UnpackIntoInterface(res[0], method, output)
 }
 
 // ensureContext is a helper method to ensure a context is not nil, even if the

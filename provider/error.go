@@ -11,8 +11,9 @@ type Error struct {
 	StatusCode int    `json:"-"`
 	Body       []byte `json:"-"`
 
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code     string `json:"code"`
+	Message  string `json:"message"`
+	Problems string `json:"problems"`
 }
 
 // Error implements the error interface.

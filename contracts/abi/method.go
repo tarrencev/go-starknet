@@ -17,10 +17,14 @@ package abi
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+// 2 ** 250 - 1
+var Mask250 = new(big.Int).Sub(new(big.Int).Exp(big.NewInt(2), big.NewInt(250), nil), big.NewInt(1))
 
 // FunctionType represents different types of functions a contract might have.
 type FunctionType int
@@ -103,8 +107,9 @@ func NewMethod(name string, rawName string, funType FunctionType, mutability str
 	)
 	if funType == Function {
 		sig = fmt.Sprintf("%v(%v)", rawName, strings.Join(types, ","))
-		id = crypto.Keccak256([]byte(sig))[:4]
+		id = new(big.Int).And(new(big.Int).SetBytes(crypto.Keccak256([]byte(rawName))), Mask250).Bytes()
 	}
+
 	// Extract meaningful state mutability of solidity method.
 	// If it's default value, never print it.
 	state := mutability

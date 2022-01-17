@@ -74,7 +74,7 @@ func (arguments Arguments) isTuple() bool {
 }
 
 // Unpack performs the operation hexdata -> Go format.
-func (arguments Arguments) Unpack(data []byte) ([]interface{}, error) {
+func (arguments Arguments) Unpack(data []string) ([]interface{}, error) {
 	if len(data) == 0 {
 		if len(arguments) != 0 {
 			return nil, fmt.Errorf("abi: attempting to unmarshall an empty string while arguments are expected")
@@ -87,30 +87,34 @@ func (arguments Arguments) Unpack(data []byte) ([]interface{}, error) {
 		}
 		return defaultVars, nil
 	}
-	return arguments.UnpackValues(data)
+
+	arguments.
+
+	return nil, nil
+	// return arguments.UnpackValues(data)
 }
 
 // UnpackIntoMap performs the operation hexdata -> mapping of argument name to argument value.
-func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte) error {
-	// Make sure map is not nil
-	if v == nil {
-		return fmt.Errorf("abi: cannot unpack into a nil map")
-	}
-	if len(data) == 0 {
-		if len(arguments) != 0 {
-			return fmt.Errorf("abi: attempting to unmarshall an empty string while arguments are expected")
-		}
-		return nil // Nothing to unmarshal, return
-	}
-	marshalledValues, err := arguments.UnpackValues(data)
-	if err != nil {
-		return err
-	}
-	for i, arg := range arguments.NonIndexed() {
-		v[arg.Name] = marshalledValues[i]
-	}
-	return nil
-}
+// func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte) error {
+// 	// Make sure map is not nil
+// 	if v == nil {
+// 		return fmt.Errorf("abi: cannot unpack into a nil map")
+// 	}
+// 	if len(data) == 0 {
+// 		if len(arguments) != 0 {
+// 			return fmt.Errorf("abi: attempting to unmarshall an empty string while arguments are expected")
+// 		}
+// 		return nil // Nothing to unmarshal, return
+// 	}
+// 	marshalledValues, err := arguments.UnpackValues(data)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	for i, arg := range arguments.NonIndexed() {
+// 		v[arg.Name] = marshalledValues[i]
+// 	}
+// 	return nil
+// }
 
 // Copy performs the operation go format -> provided struct.
 func (arguments Arguments) Copy(v interface{}, values []interface{}) error {
@@ -179,28 +183,6 @@ func (arguments Arguments) copyTuple(v interface{}, marshalledValues []interface
 		return fmt.Errorf("abi:[2] cannot unmarshal tuple in to %v", value.Type())
 	}
 	return nil
-}
-
-// UnpackValues can be used to unpack ABI-encoded hexdata according to the ABI-specification,
-// without supplying a struct to unpack into. Instead, this method returns a list containing the
-// values. An atomic argument will be a list with one element.
-func (arguments Arguments) UnpackValues(data []byte) ([]interface{}, error) {
-	nonIndexedArgs := arguments.NonIndexed()
-	retval := make([]interface{}, 0, len(nonIndexedArgs))
-	virtualArgs := 0
-	for index, arg := range nonIndexedArgs {
-		marshalledValue, err := toGoType((index+virtualArgs)*32, arg.Type, data)
-		if arg.Type.T == TupleTy && !isDynamicType(arg.Type) {
-			// If we have a static tuple, like (uint256, bool, uint256), these are
-			// coded as just like uint256,bool,uint256
-			virtualArgs += getTypeSize(arg.Type)/32 - 1
-		}
-		if err != nil {
-			return nil, err
-		}
-		retval = append(retval, marshalledValue)
-	}
-	return retval, nil
 }
 
 // PackValues performs the operation Go format -> Hexdata.

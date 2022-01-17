@@ -29,11 +29,11 @@ var (
 type ContractCaller interface {
 	// CodeAt returns the code of the given account. This is needed to differentiate
 	// between contract internal errors and the local chain being out of sync.
-	CodeAt(ctx context.Context, contract common.Hash, blockNumber *big.Int) ([]byte, error)
+	CodeAt(ctx context.Context, contract common.Hash, blockNumber *big.Int) (*provider.Code, error)
 
 	// CallContract executes an Ethereum contract call with the specified data as the
 	// input.
-	CallContract(ctx context.Context, call provider.CallMsg, blockNumber *big.Int) ([]byte, error)
+	CallContract(ctx context.Context, call provider.CallMsg, blockNumber *big.Int) ([]string, error)
 }
 
 // PendingContractCaller defines methods to perform contract calls on the pending state.

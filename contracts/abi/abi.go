@@ -82,14 +82,11 @@ func overloadedName(rawName string, isAvail func(string) bool) string {
 	return name
 }
 
-func (abi ABI) getArguments(name string, data []byte) (Arguments, error) {
+func (abi ABI) getArguments(name string) (Arguments, error) {
 	// since there can't be naming collisions with contracts and events,
 	// we need to decide whether we're calling a method or an event
 	var args Arguments
 	if method, ok := abi.Methods[name]; ok {
-		if len(data)%32 != 0 {
-			return nil, fmt.Errorf("abi: improperly formatted output: %s - Bytes: [%+v]", string(data), data)
-		}
 		args = method.Outputs
 	}
 	if args == nil {
@@ -126,8 +123,8 @@ func (abi ABI) Pack(name string, args ...interface{}) ([]byte, error) {
 }
 
 // Unpack unpacks the output according to the abi specification.
-func (abi ABI) Unpack(name string, data []byte) ([]interface{}, error) {
-	args, err := abi.getArguments(name, data)
+func (abi ABI) Unpack(name string, data []string) ([]interface{}, error) {
+	args, err := abi.getArguments(name)
 	if err != nil {
 		return nil, err
 	}
@@ -137,14 +134,14 @@ func (abi ABI) Unpack(name string, data []byte) ([]interface{}, error) {
 // UnpackIntoInterface unpacks the output in v according to the abi specification.
 // It performs an additional copy. Please only use, if you want to unpack into a
 // structure that does not strictly conform to the abi structure (e.g. has additional arguments)
-func (abi ABI) UnpackIntoInterface(v interface{}, name string, data []byte) error {
-	args, err := abi.getArguments(name, data)
-	if err != nil {
-		return err
-	}
-	unpacked, err := args.Unpack(data)
-	if err != nil {
-		return err
-	}
-	return args.Copy(v, unpacked)
-}
+// func (abi ABI) UnpackIntoInterface(v interface{}, name string, data []byte) error {
+// 	args, err := abi.getArguments(name)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	unpacked, err := args.Unpack(data)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return args.Copy(v, unpacked)
+// }

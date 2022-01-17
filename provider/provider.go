@@ -70,6 +70,7 @@ func (p *Provider) newRequest(
 		if err != nil {
 			return nil, fmt.Errorf("marshal body: %w", err)
 		}
+		println(string(data))
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 		req.Header.Add("Content-Type", "application/json; charset=utf")
 	}

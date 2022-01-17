@@ -62,93 +62,93 @@ func ReadFixedBytes(t Type, word []byte) (interface{}, error) {
 }
 
 // forEachUnpack iteratively unpack elements.
-func forEachUnpack(t Type, output []byte, start, size int) (interface{}, error) {
-	if size < 0 {
-		return nil, fmt.Errorf("cannot marshal input to array, size is negative (%d)", size)
-	}
-	if start+32*size > len(output) {
-		return nil, fmt.Errorf("abi: cannot marshal in to go array: offset %d would go over slice boundary (len=%d)", len(output), start+32*size)
-	}
+// func forEachUnpack(t Type, output []byte, start, size int) (interface{}, error) {
+// 	if size < 0 {
+// 		return nil, fmt.Errorf("cannot marshal input to array, size is negative (%d)", size)
+// 	}
+// 	if start+32*size > len(output) {
+// 		return nil, fmt.Errorf("abi: cannot marshal in to go array: offset %d would go over slice boundary (len=%d)", len(output), start+32*size)
+// 	}
 
-	// this value will become our slice or our array, depending on the type
-	var refSlice reflect.Value
+// 	// this value will become our slice or our array, depending on the type
+// 	var refSlice reflect.Value
 
-	if t.T == PointerTy {
-		// declare our slice
-		refSlice = reflect.MakeSlice(t.GetType(), size, size)
-	} else {
-		return nil, fmt.Errorf("abi: invalid type in array/slice unpacking stage")
-	}
+// 	if t.T == PointerTy {
+// 		// declare our slice
+// 		refSlice = reflect.MakeSlice(t.GetType(), size, size)
+// 	} else {
+// 		return nil, fmt.Errorf("abi: invalid type in array/slice unpacking stage")
+// 	}
 
-	// Arrays have packed elements, resulting in longer unpack steps.
-	// Slices have just 32 bytes per element (pointing to the contents).
-	elemSize := getTypeSize(*t.Elem)
+// 	// Arrays have packed elements, resulting in longer unpack steps.
+// 	// Slices have just 32 bytes per element (pointing to the contents).
+// 	elemSize := getTypeSize(*t.Elem)
 
-	for i, j := start, 0; j < size; i, j = i+elemSize, j+1 {
-		inter, err := toGoType(i, *t.Elem, output)
-		if err != nil {
-			return nil, err
-		}
+// 	for i, j := start, 0; j < size; i, j = i+elemSize, j+1 {
+// 		inter, err := toGoType(i, *t.Elem, output)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		// append the item to our reflect slice
-		refSlice.Index(j).Set(reflect.ValueOf(inter))
-	}
+// 		// append the item to our reflect slice
+// 		refSlice.Index(j).Set(reflect.ValueOf(inter))
+// 	}
 
-	// return the interface
-	return refSlice.Interface(), nil
-}
+// 	// return the interface
+// 	return refSlice.Interface(), nil
+// }
 
-func forTupleUnpack(t Type, output []byte) (interface{}, error) {
-	retval := reflect.New(t.GetType()).Elem()
-	virtualArgs := 0
-	for index, elem := range t.TupleElems {
-		marshalledValue, err := toGoType((index+virtualArgs)*32, *elem, output)
-		if elem.T == TupleTy && !isDynamicType(*elem) {
-			// If we have a static tuple, like (uint256, bool, uint256), these are
-			// coded as just like uint256,bool,uint256
-			virtualArgs += getTypeSize(*elem)/32 - 1
-		}
-		if err != nil {
-			return nil, err
-		}
-		retval.Field(index).Set(reflect.ValueOf(marshalledValue))
-	}
-	return retval.Interface(), nil
-}
+// func forTupleUnpack(t Type, output []byte) (interface{}, error) {
+// 	retval := reflect.New(t.GetType()).Elem()
+// 	virtualArgs := 0
+// 	for index, elem := range t.TupleElems {
+// 		marshalledValue, err := toGoType((index+virtualArgs)*32, *elem, output)
+// 		if elem.T == TupleTy && !isDynamicType(*elem) {
+// 			// If we have a static tuple, like (uint256, bool, uint256), these are
+// 			// coded as just like uint256,bool,uint256
+// 			virtualArgs += getTypeSize(*elem)/32 - 1
+// 		}
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		retval.Field(index).Set(reflect.ValueOf(marshalledValue))
+// 	}
+// 	return retval.Interface(), nil
+// }
 
 // toGoType parses the output bytes and recursively assigns the value of these bytes
 // into a go type with accordance with the ABI spec.
-func toGoType(index int, t Type, output []byte) (interface{}, error) {
-	if index+32 > len(output) {
-		return nil, fmt.Errorf("abi: cannot marshal in to go type: length insufficient %d require %d", len(output), index+32)
-	}
+func toGoType(index int, t Type, output []string) (interface{}, error) {
+	// if index+32 > len(output) {
+	// 	return nil, fmt.Errorf("abi: cannot marshal in to go type: length insufficient %d require %d", len(output), index+32)
+	// }
 
-	var (
-		returnOutput  []byte
-		begin, length int
-	)
+	// var (
+	// 	returnOutput  []byte
+	// 	begin, length int
+	// )
 
-	returnOutput = output[index : index+32]
+	// returnOutput = output[index : index+32]
 
-	switch t.T {
-	case TupleTy:
-		if isDynamicType(t) {
-			begin, err := tuplePointsTo(index, output)
-			if err != nil {
-				return nil, err
-			}
-			return forTupleUnpack(t, output[begin:])
-		}
-		return forTupleUnpack(t, output[index:])
-	case PointerTy:
-		return forEachUnpack(t, output[begin:], 0, length)
-	case FeltTy:
-		return ReadInteger(t, returnOutput), nil
-	case FunctionTy:
-		return readFunctionType(t, returnOutput)
-	default:
-		return nil, fmt.Errorf("abi: unknown type %v", t.T)
-	}
+	// switch t.T {
+	// case TupleTy:
+	// 	if isDynamicType(t) {
+	// 		begin, err := tuplePointsTo(index, output)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		return forTupleUnpack(t, output[begin:])
+	// 	}
+	// 	return forTupleUnpack(t, output[index:])
+	// case PointerTy:
+	// 	return forEachUnpack(t, output[begin:], 0, length)
+	// case FeltTy:
+	// 	return ReadInteger(t, returnOutput), nil
+	// case FunctionTy:
+	// 	return readFunctionType(t, returnOutput)
+	// default:
+	return nil, fmt.Errorf("abi: unknown type %v", t.T)
+	// }
 }
 
 // tuplePointsTo resolves the location reference for dynamic tuple.
