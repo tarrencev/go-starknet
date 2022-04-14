@@ -1,3 +1,5 @@
+DEPRECATED IN FAVOR OF https://github.com/dontpanicdao/caigo
+
 # go-starknet
 
 A Golang SDK for StarkNet
