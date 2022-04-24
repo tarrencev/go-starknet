@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -18,29 +19,23 @@ func TestProvider_Code(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		address common.Hash
-		opts    *CodeOptions
+		address     common.Hash
+		blockNumber *big.Int
 	}{{
 		address: common.HexToHash("0x06eeefce63bc81620e375c7501cb7b5aecdf9fb99aa5ec25886b8b854c4293cb"),
-		opts:    nil,
 	}, {
-		address: common.HexToHash("0x06eeefce63bc81620e375c7501cb7b5aecdf9fb99aa5ec25886b8b854c4293cb"),
-		opts:    &CodeOptions{BlockNumber: 582},
-	}, {
-		address: common.HexToHash("0x06eeefce63bc81620e375c7501cb7b5aecdf9fb99aa5ec25886b8b854c4293cb"),
-		opts:    &CodeOptions{BlockHash: "0x182d83f0ed972e97fa529be0088e20b5a7cb32e3bba0d164d668147713e79f9"},
+		address:     common.HexToHash("0x06eeefce63bc81620e375c7501cb7b5aecdf9fb99aa5ec25886b8b854c4293cb"),
+		blockNumber: big.NewInt(582),
 	}} {
 		ctx := context.Background()
 		p := NewProvider("https://alpha-mainnet.starknet.io")
-		got, err := p.Code(ctx, tc.address, tc.opts)
+		got, err := p.CodeAt(ctx, tc.address, tc.blockNumber)
 		if err != nil {
 			t.Fatalf("getting code: %v", err)
 		}
 
-		if tc.opts != nil {
-			if diff := cmp.Diff(want, got, nil); diff != "" {
-				t.Errorf("Code diff mismatch (-want +got):\n%s", diff)
-			}
+		if diff := cmp.Diff(want, got, nil); diff != "" {
+			t.Errorf("Code diff mismatch (-want +got):\n%s", diff)
 		}
 	}
 }
